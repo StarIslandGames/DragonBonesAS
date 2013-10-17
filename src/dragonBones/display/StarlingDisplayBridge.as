@@ -7,7 +7,9 @@
 	* @version 2.0
 	*/
 
-	
+
+	import com.sig.starling.StarlingUtils;
+
 	import dragonBones.objects.DBTransform;
 	
 	import flash.geom.ColorTransform;
@@ -68,15 +70,10 @@
 			{
 				return;
 			}
-			
+			// SIG: faster display switching
 			if (_display)
 			{
-				var parent:* = _display.parent;
-				if (parent)
-				{
-					var index:int = _display.parent.getChildIndex(_display);
-				}
-				removeDisplay();
+				replaceDisplay( value )
 			}
 			else if(value is Image && !_imageBackup)
 			{
@@ -86,7 +83,6 @@
 				_pivotYBackup = _imageBackup.pivotY;
 			}
 			_display = value;
-			addDisplay(parent, index);
 		}
 		
 		public function get visible():Boolean
@@ -168,33 +164,52 @@
                 _display.blendMode = blendMode;
             }
         }
-		
+
+		// SIG: use faster methods
 		/**
 		 * @inheritDoc
 		 */
 		public function addDisplay(container:Object, index:int = -1):void
 		{
+			var parent : DisplayObjectContainer = container as DisplayObjectContainer;
+			var display : DisplayObject = _display as DisplayObject;
 			if (container && _display)
 			{
 				if (index < 0)
 				{
-					container.addChild(_display);
+					StarlingUtils.addChildSilent( parent, display );
 				}
 				else
 				{
-					container.addChildAt(_display, Math.min(index, container.numChildren));
+					StarlingUtils.addChildSilentAt( parent, display, Math.min( index, container.numChildren ) );
 				}
 			}
 		}
-		
+
+		// SIG: use faster methods
 		/**
 		 * @inheritDoc
 		 */
 		public function removeDisplay():void
 		{
-			if (_display && _display.parent)
+			var display : DisplayObject = _display as DisplayObject;
+			if (display && display.parent)
 			{
-				_display.parent.removeChild(_display);
+				StarlingUtils.removeChildSilent( display.parent, display );
+			}
+		}
+
+		// SIG: faster display switching
+		public function replaceDisplay( newDisplay : Object ) : void {
+			var display : DisplayObject = _display as DisplayObject;
+			var parent : DisplayObjectContainer = _display.parent as DisplayObjectContainer;
+			var newStarlingDisplay : DisplayObject = newDisplay as DisplayObject;
+			if ( display && parent ) {
+				if ( newStarlingDisplay ) {
+					StarlingUtils.changeChildSilent( parent, display, newStarlingDisplay );
+				} else {
+					StarlingUtils.removeChildSilent( display.parent, display );
+				}
 			}
 		}
 	}

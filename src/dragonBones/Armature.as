@@ -1,5 +1,8 @@
 ﻿package dragonBones
 {
+
+	import com.sig.utils.Sort;
+
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.geom.ColorTransform;
@@ -489,9 +492,8 @@
 		 */
 		public function updateSlotsZOrder():void
 		{
-			_slotList.fixed = false;
-			_slotList.sort(sortSlot);
-			_slotList.fixed = true;
+			// SIG: use memory-friendly sort
+			Sort.mergeSort( _slotList as Vector.<*>, _sortSlot_closure );
 			var i:int = _slotList.length;
 			var slot:Slot;
 			while(i --)
@@ -622,11 +624,13 @@
 				}
 			}
 		}
-		
+
+		// SIG: Memory-friendly closure access
+		private const _sortSlot_closure : Function = sortSlot;
 		private function sortSlot(slot1:Slot, slot2:Slot):int
 		{
 			return slot1.zOrder < slot2.zOrder?1: -1;
 		}
-		
+
 	}
 }

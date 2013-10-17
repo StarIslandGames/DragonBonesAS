@@ -45,15 +45,17 @@ package dragonBones.objects
 		
 		public function getArmatureData(armatureName:String):ArmatureData
 		{
+			// SIG: Hack workaround for child armatures naming bug
+			var alternativeArmatureName : String = armatureName.replace('-', '/' );
 			var i:int = _armatureDataList.length;
 			while(i --)
 			{
-				if(_armatureDataList[i].name == armatureName)
+				if((_armatureDataList[i].name == armatureName) || ( _armatureDataList[i].name == alternativeArmatureName))
 				{
 					return _armatureDataList[i];
 				}
 			}
-			
+
 			return null;
 		}
 		

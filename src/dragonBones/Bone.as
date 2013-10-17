@@ -235,7 +235,8 @@
 							var displayIndex:int = tansformFrame.displayIndex;
 							if(displayIndex >= 0)
 							{
-								if(!isNaN(tansformFrame.zOrder) && tansformFrame.zOrder != _slot._tweenZorder)
+								// SIG: faster isNaN
+								if(( tansformFrame.zOrder == tansformFrame.zOrder ) && tansformFrame.zOrder != _slot._tweenZorder)
 								{
 									_slot._tweenZorder = tansformFrame.zOrder;
 									this._armature._slotsZOrderChanged = true;

@@ -250,7 +250,8 @@ package dragonBones.animation
 						{
 							_tweenEasing = NaN;
 						}
-						else if(isNaN(_animationState.clip.tweenEasing))
+						// SIG: faster isNaN
+						else if(_animationState.clip.tweenEasing != _animationState.clip.tweenEasing)
 						{
 							_tweenEasing = _currentFrame.tweenEasing;
 						}
@@ -258,8 +259,9 @@ package dragonBones.animation
 						{
 							_tweenEasing = _animationState.clip.tweenEasing;
 						}
-						
-						if(isNaN(_tweenEasing))
+
+						// SIG: faster isNaN
+						if(_tweenEasing != _tweenEasing)
 						{
 							_tweenTransform = false;
 							_tweenColor = false;
