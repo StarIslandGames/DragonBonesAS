@@ -565,10 +565,6 @@
 				{
 					_armature.animation.setActive(this, false);
 				}
-				else
-				{
-					_armature.animation.setActive(this, false);
-				}
 			}
 			
 			return false;
