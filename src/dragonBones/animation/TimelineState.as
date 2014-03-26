@@ -51,25 +51,27 @@ package dragonBones.animation
 			}
 			_pool.length = 0;
 		}
-		
-		public static function getEaseValue(value:Number, easing:Number):Number
+
+	public static function getEaseValue(value:Number, easing:Number):Number
+        {
+		var valueEase:Number = 1;
+		if(easing > 1) //ease in out
 		{
-			if (easing > 1)
-			{
-				var valueEase:Number = 0.5 * (1 - Math.cos(value * Math.PI )) - value;
-				easing -= 1;
-			}
-			else if (easing > 0)
-			{
-				valueEase = Math.sin(value * HALF_PI) - value;
-			}
-			else if (easing < 0)
-			{
-				valueEase = 1 - Math.cos(value * HALF_PI) - value;
-				easing *= -1;
-			}
-			return valueEase * easing + value;
+			var valueEase: Number = 0.5 * (1 - Math.cos(value * Math.PI));
+			easing -= 1;
 		}
+		else if (easing > 0) //ease out
+		{
+			valueEase = 1 - Math.pow(1-value,2);
+		}
+		else if (easing < 0) //ease in
+		{
+			easing *= -1;
+			valueEase =  Math.pow(value,2);
+		}
+
+		return (valueEase - value) * easing + value;
+        }
 		
 		public var transform:DBTransform;
 		public var pivot:Point;
@@ -392,6 +394,7 @@ package dragonBones.animation
 							}
 						}
 						
+						_bone.arriveAtFrame(_currentFrame, this, _animationState, false);
 						if(!_tweenColor)
 						{
 							if(_currentFrame.color)
@@ -413,7 +416,6 @@ package dragonBones.animation
 								_bone.updateColor(0, 0, 0, 0, 1, 1, 1, 1, false);
 							}
 						}
-						_bone.arriveAtFrame(_currentFrame, this, _animationState, false);
 					}
 					
 					if(_tweenTransform || _tweenColor)
@@ -514,6 +516,7 @@ package dragonBones.animation
 					
 					tweenActive = _currentFrame.displayIndex >= 0;
 					
+					_bone.arriveAtFrame(_currentFrame, this, _animationState, false);
 					if(_currentFrame.color)
 					{
 						_bone.updateColor(
@@ -532,9 +535,6 @@ package dragonBones.animation
 					{
 						_bone.updateColor(0, 0, 0, 0, 1, 1, 1, 1, false);
 					}
-					
-					
-					_bone.arriveAtFrame(_currentFrame, this, _animationState, false);
 				}
 			}
 		}

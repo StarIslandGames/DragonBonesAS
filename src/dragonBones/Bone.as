@@ -16,8 +16,18 @@
 	
 	public class Bone extends DBObject
 	{
+		/**
+		 * The instance dispatch sound event.
+		 */
 		private static const _soundManager:SoundEventManager = SoundEventManager.getInstance();
-		//0/1/2
+		
+		/**
+		 * 骨骼的缩放模式，默认为1，当为2时，bone的缩放将影响所有子bone和子slot的缩放，当为1时，只影响slot的缩放，为0时都不影响，
+		 * Bone's scaleMode, could be 0, 1(default) or 2. 
+		 * scaleMode equals to 0: Bone's scale impact nothing.
+		 * scaleMode equals to 1: Bone's scale impact its slots.
+		 * scaleMode equals to 2: Bone's scale impact its child bones and slots.
+		 */
 		public var scaleMode:int;
 		
 		/** @private */
@@ -27,7 +37,7 @@
 		
 		private var _slot:Slot;
 		/**
-		 * The default Slot of this Bone instance.
+		 * The first slot of this Bone instance.
 		 */
 		public function get slot():Slot
 		{
@@ -35,7 +45,7 @@
 		}
 		
 		/**
-		 * The sub-armature of default Slot of this Bone instance.
+		 * childArmature, keep this API for v2.2 compatibility
 		 */
 		public function get childArmature():Armature
 		{
@@ -43,7 +53,7 @@
 		}
 		
 		/**
-		 * The DisplayObject of default Slot of this Bone instance.
+		 * display object, keep this API for v2.2 compatibility
 		 */
 		public function get display():Object
 		{
@@ -57,6 +67,10 @@
 			}
 		}
 		
+		/**
+		 * AnimationState that slots belong to the bone will be controlled by.
+		 * Sometimes, we want slots controlled by a spedific animation state when animation is doing mix or addition.
+		 */
 		public var displayController:String;
 		
 		/**
@@ -90,6 +104,9 @@
 			}
 		}
 		
+		/**
+		 * Creates a Bone blank instance.
+		 */
 		public function Bone()
 		{
 			super();
@@ -125,6 +142,12 @@
 			_tweenPivot = null;
 		}
 		
+		/**
+		 * If contains some bone or slot
+		 * @param Slot or Bone instance
+		 * @return Boolean
+		 * @see dragonBones.core.DBObject
+		 */
 		public function contains(child:DBObject):Boolean
 		{
 			if(!child)
@@ -143,6 +166,11 @@
 			return ancestor == this;
 		}
 		
+		/**
+		 * Add a bone or slot as child
+		 * @param a Slot or Bone instance
+		 * @see dragonBones.core.DBObject
+		 */
 		public function addChild(child:DBObject):void
 		{
 			if(!child)
@@ -171,6 +199,11 @@
 			}
 		}
 		
+		/**
+		 * remove a child bone or slot
+		 * @param a Slot or Bone instance
+		 * @see dragonBones.core.DBObject
+		 */
 		public function removeChild(child:DBObject):void
 		{
 			if(!child)
@@ -217,7 +250,7 @@
 			return slotList;
 		}
 		
-		/** @private */
+		/** @private When bone timeline enter a key frame, call this func*/
 		dragonBones_internal function arriveAtFrame(frame:Frame, timelineState:TimelineState, animationState:AnimationState, isCross:Boolean):void
 		{
 			if(frame)
@@ -235,8 +268,7 @@
 							var displayIndex:int = tansformFrame.displayIndex;
 							if(displayIndex >= 0)
 							{
-								// SIG: faster isNaN
-								if(( tansformFrame.zOrder == tansformFrame.zOrder ) && tansformFrame.zOrder != _slot._tweenZorder)
+								if(!isNaN(tansformFrame.zOrder) && tansformFrame.zOrder != _slot._tweenZorder)
 								{
 									_slot._tweenZorder = tansformFrame.zOrder;
 									this._armature._slotsZOrderChanged = true;
@@ -266,7 +298,9 @@
 					_soundManager.dispatchEvent(soundEvent);
 				}
 				
-				if(frame.action)
+				//[TODO]currently there is only gotoAndPlay belongs to frame action. In future, there will be more.  
+				//后续会扩展更多的action，目前只有gotoAndPlay的含义
+				if(frame.action) 
 				{
 					for each(var child:DBObject in _children)
 					{
