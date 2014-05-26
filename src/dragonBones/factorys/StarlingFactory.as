@@ -133,7 +133,7 @@
 		/** @private */
 		override protected function generateDisplay(textureAtlas:Object, fullName:String, pivotX:Number, pivotY:Number):Object
 		{
-			var subTexture:SubTexture = (textureAtlas as TextureAtlas).getTexture(fullName) as SubTexture;
+			var subTexture:Texture = (textureAtlas as TextureAtlas).getTexture(fullName);
 			if (subTexture)
 			{
 				var subTextureFrame:Rectangle = (textureAtlas as TextureAtlas).getFrame(fullName);

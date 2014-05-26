@@ -57,7 +57,7 @@ package dragonBones.animation
 		var valueEase:Number = 1;
 		if(easing > 1) //ease in out
 		{
-			var valueEase: Number = 0.5 * (1 - Math.cos(value * Math.PI));
+			valueEase = 0.5 * (1 - Math.cos(value * Math.PI));
 			easing -= 1;
 		}
 		else if (easing > 0) //ease out

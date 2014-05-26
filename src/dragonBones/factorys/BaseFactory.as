@@ -404,6 +404,9 @@ package dragonBones.factorys
 				//
 				for each(var displayObject:Object in helpArray)
 				{
+					if ( !displayObject ) {
+						continue;
+					}
 					if("name" in displayObject)
 					{
 						try
