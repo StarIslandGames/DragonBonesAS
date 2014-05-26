@@ -1,4 +1,4 @@
-package dragonBones.factorys
+﻿package dragonBones.factorys
 {
 	import flash.display.MovieClip;
 	import flash.display.Shape;
@@ -8,7 +8,7 @@ package dragonBones.factorys
 	import dragonBones.Armature;
 	import dragonBones.Slot;
 	import dragonBones.core.dragonBones_internal;
-	import dragonBones.display.NativeDisplayBridge;
+	import dragonBones.display.NativeSlot;
 	import dragonBones.textures.ITextureAtlas;
 	import dragonBones.textures.NativeTextureAtlas;
 	
@@ -23,7 +23,14 @@ package dragonBones.factorys
 	
 	public class NativeFactory extends BaseFactory
 	{
+		/**
+		 * If enable BitmapSmooth
+		 */		
 		public var fillBitmapSmooth:Boolean;
+		
+		/**
+		 * If use bitmapData Texture（When using dbswf，you can use vector element，if enable useBitmapDataTexture，dbswf will be force converted to BitmapData）
+		 */		
 		public var useBitmapDataTexture:Boolean;
 		
 		public function NativeFactory()
@@ -49,16 +56,17 @@ package dragonBones.factorys
 		/** @private */
 		override protected function generateSlot():Slot
 		{
-			var slot:Slot = new Slot(new NativeDisplayBridge());
+			var slot:Slot = new NativeSlot();
 			return slot;
 		}
 		
 		/** @private */
 		override protected function generateDisplay(textureAtlas:Object, fullName:String, pivotX:Number, pivotY:Number):Object
 		{
+			var nativeTextureAtlas:NativeTextureAtlas;
 			if(textureAtlas is NativeTextureAtlas)
 			{
-				var nativeTextureAtlas:NativeTextureAtlas = textureAtlas as NativeTextureAtlas;
+				nativeTextureAtlas = textureAtlas as NativeTextureAtlas;
 			}
 			
 			if(nativeTextureAtlas)
