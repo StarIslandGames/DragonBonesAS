@@ -115,12 +115,14 @@
 		}
 		
 		private var _armature:Armature;
-		private var _currentFrame:Frame;
 		private var _timelineStateList:Vector.<TimelineState>;
-		private var _mixingTransforms:Object;
+		private var _mixingTransforms:Vector.<String>;
 		
 		private var _isPlaying:Boolean;
 		private var _time:Number;
+		private var _currentFrameIndex:int;
+		private var _currentFramePosition:int;
+		private var _currentFrameDuration:int;
 		
 		private var _pausePlayheadInFade:Boolean;
 		private var _isFadeOut:Boolean;
@@ -189,34 +191,34 @@
 		 */
 		public function get currentPlayTimes():int
 		{
-			return _currentPlayTimes;
+			return _currentPlayTimes < 0 ? 0 : _currentPlayTimes;
 		}
 		
-		private var _totalTime:Number;
+		private var _totalTime:int;
 		/**
 		 * The length of the animation clip in seconds.
 		 */
 		public function get totalTime():Number
 		{
-			return _totalTime;
+			return _totalTime * 0.001;
 		}
 		
-		private var _currentTime:Number;
+		private var _currentTime:int;
 		/**
 		 * The current time of the animation.
 		 */
 		public function get currentTime():Number
 		{
-			return _currentTime;
+			return _currentTime < 0 ? 0 : _currentTime * 0.001;
 		}
 		public function setCurrentTime(value:Number):AnimationState
 		{
-			if(isNaN(value))
+			if(value < 0 || isNaN(value))
 			{
 				value = 0;
 			}
-			_currentTime = value;
-			_time = _currentTime;
+			_time = value;
+			_currentTime = _time * 1000;
 			return this;
 		}
 		
@@ -266,13 +268,12 @@
 		}
 		public function setPlayTimes(value:int):AnimationState
 		{
-			if(Math.round(_totalTime * _clip.frameRate) < 2)
+			if(Math.round(_totalTime * 0.001 * _clip.frameRate) < 2)
 			{
 				_playTimes = value < 0?-1:1;
 			}
 			else
 			{
-				_timeScale = timeScale;
 				_playTimes = value < 0?-value:value;
 			}
 			autoFadeOut = value < 0?true:false;
@@ -282,6 +283,7 @@
 		public function AnimationState()
 		{ 
 			_timelineStateList = new Vector.<TimelineState>;
+			_mixingTransforms = new Vector.<String>;
 		}
 		
 		/** @private */
@@ -294,27 +296,25 @@
 			_name = _clip.name;
 			_totalTime = _clip.duration;
 			
+			autoTween = _clip.autoTween;
+			
 			setTimeScale(timeScale);
 			setPlayTimes(playTimes);
 			
-			autoTween = _clip.autoTween;
-			
-			//clear
-			_currentFrame = null;
-			_mixingTransforms = null;
-			
 			//reset
 			_isComplete = false;
-			_time = 0;
-			_currentPlayTimes = 0;
-			if(Math.round(_totalTime * _clip.frameRate) < 2 || timeScale == Infinity)
+			_currentFrameIndex = -1;
+			_currentPlayTimes = -1;
+			if(Math.round(_totalTime * _clip.frameRate * 0.001) < 2 || timeScale == Infinity)
 			{
 				_currentTime = _totalTime;
 			}
 			else
 			{
-				_currentTime = 0;
+				_currentTime = -1;
 			}
+			_time = 0;
+			_mixingTransforms.length = 0;
 			
 			//fade start
 			_isFadeOut = false;
@@ -405,22 +405,17 @@
 			return this;
 		}
 		
-		public function getMixingTransform(timelineName:String):int
+		public function getMixingTransform(timelineName:String):Boolean
 		{
-			if(_mixingTransforms && _mixingTransforms[timelineName] != null)
-			{
-				return int(_mixingTransforms[timelineName]);
-			}
-			return 0;
+			return _mixingTransforms.indexOf(timelineName) >= 0;
 		}
 		
 		/**
 		 * Adds a transform which should be animated. This allows you to reduce the number of animations you have to create.
 		 * @param timelineName Bone's timeline name.
-		 * @param type Animation mixing type，0：all timeline effect will be applied，1：Invalid the timeline's displayControl 
 		 * @param recursive if involved child armature's timeline.
 		 */
-		public function addMixingTransform(timelineName:String, type:int = 0, recursive:Boolean = true):AnimationState
+		public function addMixingTransform(timelineName:String, recursive:Boolean = true):AnimationState
 		{
 			if(recursive)
 			{
@@ -439,22 +434,20 @@
 					{
 						if(_clip.getTimeline(boneName))
 						{
-							if(!_mixingTransforms)
+							if(_mixingTransforms.indexOf(boneName) < 0)
 							{
-								_mixingTransforms = {};
+								_mixingTransforms.push(boneName);
 							}
-							_mixingTransforms[boneName] = type;
 						}
 					}
 				}
 			}
 			else if(_clip.getTimeline(timelineName))
 			{
-				if(!_mixingTransforms)
+				if(_mixingTransforms.indexOf(timelineName) < 0)
 				{
-					_mixingTransforms = {};
+					_mixingTransforms.push(timelineName);
 				}
-				_mixingTransforms[timelineName] = type;
 			}
 			
 			updateTimelineStates();
@@ -466,51 +459,47 @@
 		 * @param timelineName Bone's timeline name.
 		 * @param recursive If involved child armature's timeline.
 		 */
-		public function removeMixingTransform(timelineName:String = null, recursive:Boolean = true):AnimationState
+		public function removeMixingTransform(timelineName:String, recursive:Boolean = true):AnimationState
 		{
-			if(timelineName && _mixingTransforms)
+			if(recursive)
 			{
-				if(recursive)
+				var boneList:Vector.<Bone> = _armature.getBones(false);
+				var currentBone:Bone;
+				var i:int = boneList.length;
+				while(i --)
 				{
-					var boneList:Vector.<Bone> = _armature.getBones(false);
-					var i:int = boneList.length;
-					var currentBone:Bone;
-					while(i --)
+					var bone:Bone = boneList[i];
+					if(bone.name == timelineName)
 					{
-						var bone:Bone = boneList[i];
-						if(bone.name == timelineName)
+						currentBone = bone;
+					}
+					if(currentBone && (currentBone == bone || currentBone.contains(bone)))
+					{
+						var index1:int = _mixingTransforms.indexOf(bone.name);
+						if(index1 >= 0)
 						{
-							currentBone = bone;
-						}
-						if(currentBone && (currentBone == bone || currentBone.contains(bone)))
-						{
-							delete _mixingTransforms[bone.name];
+							_mixingTransforms.splice(index1, 1);
 						}
 					}
-				}
-				else
-				{
-					delete _mixingTransforms[timelineName];
-				}
-				
-				var hasMixing:Boolean = false;
-				for each(timelineName in _mixingTransforms)
-				{
-					hasMixing = true;
-					break;
-				}
-				if(!hasMixing)
-				{
-					_mixingTransforms = null;
 				}
 			}
 			else
 			{
-				_mixingTransforms = null;
+				var index2:int = _mixingTransforms.indexOf(timelineName);
+				if(index2 >= 0)
+				{
+					_mixingTransforms.splice(index2, 1);
+				}
 			}
-			
 			updateTimelineStates();
 			
+			return this;
+		}
+		
+		public function removeAllMixingTransform():AnimationState
+		{
+			_mixingTransforms.length = 0;
+			updateTimelineStates();
 			return this;
 		}
 		
@@ -546,19 +535,19 @@
 				}
 			}
 			
-			if(_mixingTransforms)
+			if(_mixingTransforms.length > 0)
 			{
 				i = _timelineStateList.length;
 				while(i --)
 				{
 					timelineState = _timelineStateList[i];
-					if(_mixingTransforms[timelineState.name] == null)
+					if(_mixingTransforms.indexOf(timelineState.name) < 0)
 					{
 						removeTimelineState(timelineState);
 					}
 				}
 				
-				for(var timelineName:String in _mixingTransforms)
+				for each(var timelineName:String in _mixingTransforms)
 				{
 					addTimelineState(timelineName);
 				}
@@ -604,7 +593,7 @@
 			
 			if(_fadeBeginTime >= 0)
 			{
-				var fadeState:int;
+				var fadeState:int = _fadeState;
 				_fadeCurrentTime += passedTime < 0?-passedTime:passedTime;
 				if(_fadeCurrentTime >= _fadeBeginTime + _fadeTotalTime)
 				{
@@ -615,9 +604,13 @@
 					)
 					{
 						fadeState = 1;
+						if (_pausePlayheadInFade)
+						{
+							_pausePlayheadInFade = false;
+							_currentTime = -1;
+						}
 					}
 					_fadeWeight = _isFadeOut?0:1;
-					_pausePlayheadInFade = false;
 				}
 				else if(_fadeCurrentTime >= _fadeBeginTime)
 				{
@@ -646,7 +639,7 @@
 						fadeStartFlg = true;
 					}
 					
-					//(_fadeState == -1 || _fadeState == 0) && fadeState == -1
+					//(_fadeState == -1 || _fadeState == 0) && fadeState == 1
 					if(fadeState == 1)
 					{
 						fadeCompleteFlg = true;
@@ -714,13 +707,24 @@
 			var startFlg:Boolean = false;
 			var completeFlg:Boolean = false;
 			var loopCompleteFlg:Boolean = false;
-			
-			var currentTime:Number = _time;
-			var currentPlayTimes:int;
-			var isThisComplete:Boolean;
-			if(_playTimes != 0)
+			var isThisComplete:Boolean = false;
+			var currentPlayTimes:int = 0;
+			var currentTime:int = _time * 1000;
+			if(_playTimes == 0)
 			{
-				var totalTimes:Number = _playTimes * _totalTime;
+				isThisComplete = false;
+				currentPlayTimes = Math.ceil(Math.abs(currentTime) / _totalTime) || 1;
+				//currentTime -= Math.floor(currentTime / _totalTime) * _totalTime;
+				currentTime -= int(currentTime / _totalTime) * _totalTime;
+				
+				if(currentTime < 0)
+				{
+					currentTime += _totalTime;
+				}
+			}
+			else
+			{
+				var totalTimes:int = _playTimes * _totalTime;
 				if(currentTime >= totalTimes)
 				{
 					currentTime = totalTimes;
@@ -741,31 +745,19 @@
 					currentTime += totalTimes;
 				}
 				
-				currentPlayTimes = Math.ceil(currentTime/_totalTime) || 1;
-				//currentTime -= Math.floor(currentTime/_totalTime) * _totalTime;
-				currentTime -= int(currentTime/_totalTime) * _totalTime;
+				currentPlayTimes = Math.ceil(currentTime / _totalTime) || 1;
+				//currentTime -= Math.floor(currentTime / _totalTime) * _totalTime;
+				currentTime -= int(currentTime / _totalTime) * _totalTime;
 				
 				if(isThisComplete)
 				{
 					currentTime = _totalTime;
 				}
 			}
-			else
-			{
-				isThisComplete = false;
-				currentPlayTimes = Math.ceil(Math.abs(currentTime)/_totalTime) || 1;
-				//currentTime -= Math.floor(currentTime/_totalTime) * _totalTime;
-				currentTime -= int(currentTime/_totalTime) * _totalTime;
-				
-				if(currentTime < 0)
-				{
-					currentTime += _totalTime;
-				}
-			}
 			
 			//update timeline
 			_isComplete = isThisComplete;
-			var progress:Number = _time / _totalTime;
+			var progress:Number = _time * 1000 / _totalTime;
 			for each(var timeline:TimelineState in _timelineStateList)
 			{
 				timeline.update(progress);
@@ -773,18 +765,18 @@
 			}
 			
 			//update main timeline
-			if(_currentTime != currentTime || _currentPlayTimes == 0)
+			if(_currentTime != currentTime)
 			{
 				if(_currentPlayTimes != currentPlayTimes)    //check loop complete
 				{
-					_currentPlayTimes = currentPlayTimes;
-					if(_currentPlayTimes > 1)
+					if(_currentPlayTimes > 0 && currentPlayTimes > 1)
 					{
 						loopCompleteFlg = true;
 					}
+					_currentPlayTimes = currentPlayTimes;
 				}
 				
-				if(_currentTime == 0 && _currentPlayTimes == 1)    //check start
+				if(_currentTime < 0)    //check start
 				{
 					startFlg = true;
 				}
@@ -795,13 +787,14 @@
 				}
 				
 				_currentTime = currentTime;
-				
+				/*
 				if(isThisComplete)
 				{
-					currentTime = _totalTime * 0.99999999;
+					currentTime = _totalTime * 0.999999;
 				}
 				//[0, _totalTime)
-				updateMainTimeline(currentTime);
+				*/
+				updateMainTimeline(isThisComplete);
 			}
 			
 			var event:AnimationEvent;
@@ -839,76 +832,82 @@
 			}
 		}
 		
-		private function updateMainTimeline(currentTime:Number):void
+		private function updateMainTimeline(isThisComplete:Boolean):void
 		{
 			var frameList:Vector.<Frame> = _clip.frameList;
 			if(frameList.length > 0)
 			{
-				var isArrivedAtNewFrame:Boolean = false;
-				var frameIndex:int = 0;
-				while(!_currentFrame || currentTime > _currentFrame.position + _currentFrame.duration || currentTime < _currentFrame.position)
+				var prevFrame:Frame;
+				var currentFrame:Frame;
+				for (var i:int = 0, l:int = _clip.frameList.length; i < l; ++i)
 				{
-					if(isArrivedAtNewFrame)
+					if(_currentFrameIndex < 0)
 					{
-						_armature.arriveAtFrame(_currentFrame, null, this, true);
+						_currentFrameIndex = 0;
 					}
-					if(_currentFrame)
+					else if(_currentTime < _currentFramePosition || _currentTime >= _currentFramePosition + _currentFrameDuration)
 					{
-						frameIndex = frameList.indexOf(_currentFrame);
-						frameIndex ++;
-						if(frameIndex >= frameList.length)
+						_currentFrameIndex ++;
+						if(_currentFrameIndex >= frameList.length)
 						{
-							frameIndex = 0;
+							if(isThisComplete)
+							{
+								_currentFrameIndex --;
+								break;
+							}
+							else
+							{
+								_currentFrameIndex = 0;
+							}
 						}
-						_currentFrame = frameList[frameIndex];
 					}
 					else
 					{
-						_currentFrame = frameList[0];
-					}
-					if(_currentFrame)
-					{
-						isArrivedAtNewFrame = true;
-					}
-					else
-					{
-						isArrivedAtNewFrame = false;
 						break;
 					}
+					currentFrame = frameList[_currentFrameIndex];
+					
+					if(prevFrame)
+					{
+						_armature.arriveAtFrame(prevFrame, null, this, true);
+					}
+					
+					_currentFrameDuration = currentFrame.duration;
+					_currentFramePosition = currentFrame.position;
+					prevFrame = currentFrame;
 				}
 				
-				if(isArrivedAtNewFrame)
+				if(currentFrame)
 				{
-					_armature.arriveAtFrame(_currentFrame, null, this, false);
+					_armature.arriveAtFrame(currentFrame, null, this, false);
 				}
 			}
 		}
 		
 		private function hideBones():void
 		{
-			for(var timelineName:String in _clip.hideTimelineNameMap)
+			for each(var timelineName:String in _clip.hideTimelineNameMap)
 			{
 				var bone:Bone = _armature.getBone(timelineName);
 				if(bone)
 				{
-					bone.arriveAtFrame(null, null, this, false);
+					bone.hideSlots();
 				}
 			}
 		}
 		
 		private function clear():void
 		{
-			
-			for each(var timelineState:TimelineState in _timelineStateList)
+			var i:int = _timelineStateList.length;
+			while(i --)
 			{
-				TimelineState.returnObject(timelineState);
+				TimelineState.returnObject(_timelineStateList[i]);
 			}
 			_timelineStateList.length = 0;
+			_mixingTransforms.length = 0;
 			
 			_armature = null;
-			_currentFrame = null;
 			_clip = null;
-			_mixingTransforms = null;
 		}
 	}
 }

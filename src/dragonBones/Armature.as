@@ -91,8 +91,6 @@
 		/** @private Store event needed to dispatch in current frame. When advanceTime execute complete, dispath them.*/
 		dragonBones_internal var _eventList:Vector.<Event>;
 		
-		/** @private */
-		dragonBones_internal var _armatureData:ArmatureData;
 		
 		/** @private Store slots based on slots' zOrder*/
 		protected var _slotList:Vector.<Slot>;
@@ -102,6 +100,17 @@
 		
 		private var _delayDispose:Boolean;
 		private var _lockDispose:Boolean;
+		
+		/** @private */
+		dragonBones_internal var _armatureData:ArmatureData;
+		/**
+		 * ArmatureData.
+		 * @see dragonBones.objects.ArmatureData.
+		 */
+		public function get armatureData():ArmatureData
+		{
+			return _armatureData;
+		}
 
 		/** @private */
 		protected var _display:Object;
@@ -243,7 +252,7 @@
 			
 			passedTime *= _animation.timeScale;    //_animation's time scale will impact childArmature
 			
-			var isFading:Boolean = animation._isFading;
+			var isFading:Boolean = _animation._isFading;
 			var i:int = _boneList.length;
 			while(i --)
 			{
@@ -569,7 +578,7 @@
 				var slot:Slot = _slotList[i];
 				if(slot._isShowDisplay)
 				{
-					slot.addDisplayToContainer(display);
+					slot.addDisplayToContainer(_display);
 				}
 			}
 			

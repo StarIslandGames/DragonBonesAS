@@ -17,6 +17,8 @@
 		public static const FRAME:String = "frame";
 		public static const TRANSFORM:String = "transform";
 		public static const COLOR_TRANSFORM:String = "colorTransform";
+		public static const RECTANGLE:String = "rectangle";
+		public static const ELLIPSE:String = "ellipse";
 		
 		public static const TEXTURE_ATLAS:String = "TextureAtlas";
 		public static const SUB_TEXTURE:String = "SubTexture";
@@ -71,9 +73,8 @@
 		public static const A_GREEN_MULTIPLIER:String = "gM";
 		public static const A_BLUE_MULTIPLIER:String = "bM";
 		
-		
-		public static const A_MATRIX3D:String = "matrix3D"
-		
+		public static const A_SCALE_X_OFFSET:String = "scXOffset";
+		public static const A_SCALE_Y_OFFSET:String = "scYOffset";
 		
 		public static const A_SCALE_MODE:String = "scaleMode";
 		public static const A_FIXED_ROTATION:String = "fixedRotation";
