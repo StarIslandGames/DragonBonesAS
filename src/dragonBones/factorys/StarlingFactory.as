@@ -135,13 +135,6 @@
 			var subTexture:Texture = (textureAtlas as TextureAtlas).getTexture(fullName);
 			if (subTexture)
 			{
-				var subTextureFrame:Rectangle = (textureAtlas as TextureAtlas).getFrame(fullName);
-				if(subTextureFrame)
-				{
-					pivotX += subTextureFrame.x;
-					pivotY += subTextureFrame.y;
-				}
-				
 				var image:Image = new Image(subTexture);
 				image.pivotX = pivotX;
 				image.pivotY = pivotY;

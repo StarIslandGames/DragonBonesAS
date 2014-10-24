@@ -123,11 +123,6 @@ package dragonBones.core
 			_offset.scaleX = _offset.scaleY = 1;
 			
 			_visible = true;
-			
-			_armature = null;
-			_parent = null;
-			
-			userData = null;
 		}
 		
 		/**
@@ -144,6 +139,7 @@ package dragonBones.core
 			
 			_armature = null;
 			_parent = null;
+			userData = null;
 		}
 	}
 }

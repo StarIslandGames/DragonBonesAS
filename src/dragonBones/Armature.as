@@ -1,5 +1,8 @@
 ﻿package dragonBones
 {
+
+	import com.sig.utils.Sort;
+
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	
@@ -528,8 +531,8 @@
 				if(_boneList.indexOf(bone) < 0)
 				{
 					_boneList.fixed = false;
-					_boneList[_boneList.length] = bone;
-					sortBoneList();
+					//SIG: performance (use binary push instead of resort)
+					Sort.binaryPush( _boneList as Vector.<*>, bone, _boneListSort_closure );
 					_boneList.fixed = true;
 					_animation.updateAnimationStates();
 				}
@@ -569,51 +572,12 @@
 		 */
 		public function updateSlotsZOrder():void
 		{
-			_slotList.fixed = false;
-			_slotList.sort(sortSlot);
-			_slotList.fixed = true;
-			var i:int = _slotList.length;
-			while(i --)
-			{
-				var slot:Slot = _slotList[i];
-				if(slot._isShowDisplay)
-				{
-					slot.addDisplayToContainer(_display);
-				}
+			// SIG: performance update
+			if ( _slotList.length ) {
+				Sort.mergeSort( _slotList as Vector.<*>, _sortSlot_closure, _sortSlot_buffer );
+				_slotList[0].setDisplayToConatiner( _slotList, _display );
 			}
-			
 			_slotsZOrderChanged = false;
-		}
-
-		private function sortBoneList():void
-		{
-			var i:int = _boneList.length;
-			if(i == 0)
-			{
-				return;
-			}
-			var helpArray:Array = [];
-			while(i --)
-			{
-				var level:int = 0;
-				var bone:Bone = _boneList[i];
-				var boneParent:Bone = bone;
-				while(boneParent)
-				{
-					level ++;
-					boneParent = boneParent.parent;
-				}
-				helpArray[i] = [level, bone];
-			}
-			
-			helpArray.sortOn("0", Array.NUMERIC|Array.DESCENDING);
-			
-			i = helpArray.length;
-			while(i --)
-			{
-				_boneList[i] = helpArray[i][1];
-			}
-			helpArray.length = 0;
 		}
 
 		/** @private When AnimationState enter a key frame, call this func*/
@@ -647,9 +611,19 @@
 			}
 		}
 
-		private function sortSlot(slot1:Slot, slot2:Slot):int
-		{
-			return slot1.zOrder < slot2.zOrder?1: -1;
+
+		static private const _boneListSort_closure : Function = boneListSort;
+		static private function boneListSort( a : Bone, b : Bone ) : int {
+			return - a.level + b.level; // reversed order for chinese vector
+		}
+
+		static private const _sortSlot_buffer : Vector.<*> = ( new Vector.<Slot>() ) as Vector.<*>;
+		static private const _sortSlot_closure : Function = sortSlot;
+		static private function sortSlot(slot1:Slot, slot2:Slot):int {
+			if ( slot1.zOrder === slot2.zOrder ) {
+				return 0;
+			}
+			return slot1.zOrder < slot2.zOrder ? 1 : -1;
 		}
 
 	}

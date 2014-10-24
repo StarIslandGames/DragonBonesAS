@@ -1,5 +1,9 @@
 ﻿package dragonBones
 {
+
+	import com.sig.utils.Sort;
+	import com.sig.utils.VectorUtils;
+
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	
@@ -20,6 +24,8 @@
 	
 	public class Bone extends DBObject
 	{
+		public var level : int;
+
 		/**
 		 * The instance dispatch sound event.
 		 */
@@ -283,6 +289,7 @@
 				_boneList[_boneList.length] = bone;
 				_boneList.fixed = true;
 				bone.setParent(this);
+				bone.level = level + 1;
 				bone.setArmature(this._armature);
 			}
 			else if(child is Slot)
@@ -319,6 +326,7 @@
 					_boneList.splice(index, 1);
 					_boneList.fixed = true;
 					bone.setParent(null);
+					bone.level = 0;
 					bone.setArmature(null);
 				}
 				else
@@ -491,7 +499,7 @@
 					slot.updateDisplayVisible(tansformFrame.visible);
 					if(displayIndex >= 0)
 					{
-						if(!isNaN(tansformFrame.zOrder) && tansformFrame.zOrder != slot._tweenZOrder)
+						if( (tansformFrame.zOrder == tansformFrame.zOrder) && tansformFrame.zOrder != slot._tweenZOrder) // SIG: !isNan
 						{
 							slot._tweenZOrder = tansformFrame.zOrder;
 							this._armature._slotsZOrderChanged = true;
@@ -538,19 +546,16 @@
 		{
 			if(_timelineStateList.indexOf(timelineState) < 0)
 			{
-				_timelineStateList.push(timelineState);
-				_timelineStateList.sort(sortState);
+				// SIG: performance
+				Sort.binaryPush( _timelineStateList as Vector.<*>, timelineState, _sortState_closure );
 			}
 		}
 		
 		/** @private */
 		dragonBones_internal function removeState(timelineState:TimelineState):void
 		{
-			var index:int = _timelineStateList.indexOf(timelineState);
-			if(index >= 0)
-			{
-				_timelineStateList.splice(index, 1);
-			}
+			// SIG: performance
+			VectorUtils.removeItem( _timelineStateList as Vector.<*>, timelineState );
 		}
 		
 		private function blendingTimeline():void
@@ -647,10 +652,11 @@
 				_tweenPivot.y = pivotY;
 			}
 		}
-		
-		private function sortState(state1:TimelineState, state2:TimelineState):int
+
+		static private const _sortState_closure : Function = sortState;
+		static private function sortState(state1:TimelineState, state2:TimelineState):int
 		{
-			return state1._animationState.layer < state2._animationState.layer?-1:1;
+			return state1._animationState.layer - state2._animationState.layer;
 		}
 	}
 }

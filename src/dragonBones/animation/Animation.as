@@ -1,10 +1,13 @@
 ﻿package dragonBones.animation
 {
+
+	import com.sig.utils.VectorUtils;
+
 	import dragonBones.Armature;
 	import dragonBones.Slot;
 	import dragonBones.core.dragonBones_internal;
 	import dragonBones.objects.AnimationData;
-	
+
 	use namespace dragonBones_internal;
 	
 	/**
@@ -491,26 +494,25 @@
 		
 		private function removeState(animationState:AnimationState):void
 		{
-			var index:int = _animationStateList.indexOf(animationState);
-			if(index >= 0)
-			{
-				_animationStateList.splice(index, 1);
-				AnimationState.returnObject(animationState);
-				
-				if(_lastAnimationState == animationState)
-				{
-					if(_animationStateList.length > 0)
-					{
-						_lastAnimationState = _animationStateList[0];
-					}
-					else
-					{
-						_lastAnimationState = null;
-					}
-				}
-				
-				_animationStateCount = _animationStateList.length;
+			// SIG: performance
+			if ( !VectorUtils.removeItem( _animationStateList as Vector.<*>, animationState ) ) {
+				return;
 			}
+			AnimationState.returnObject(animationState);
+				
+			if(_lastAnimationState == animationState)
+			{
+				if(_animationStateList.length > 0)
+				{
+					_lastAnimationState = _animationStateList[0];
+				}
+				else
+				{
+					_lastAnimationState = null;
+				}
+			}
+
+			_animationStateCount = _animationStateList.length;
 		}
 	}
 }

@@ -1,5 +1,8 @@
 ﻿package dragonBones.display
 {
+
+	import com.sig.starling.StarlingUtils;
+
 	import flash.display.BlendMode;
 	import flash.geom.Matrix;
 	
@@ -12,8 +15,11 @@
 	import starling.display.DisplayObjectContainer;
 	import starling.display.Quad;
 	
+	import starling.core.starling_internal;
+
 	use namespace dragonBones_internal;
-	
+	use namespace starling_internal;
+
 	public class StarlingSlot extends Slot
 	{
 		private var _starlingDisplay:DisplayObject;
@@ -83,12 +89,26 @@
 			}
 		}
 		
+		override dragonBones_internal function setDisplayToConatiner( slotList : Vector.<Slot>, container : Object ) : void {
+			var starlingContainer:DisplayObjectContainer = container as DisplayObjectContainer;
+			if ( starlingContainer ) {
+				starlingContainer.mChildren.length = 0;
+				for( var i : int = slotList.length - 1; i >= 0; i-- ) {
+					var slot : Slot = slotList[ i ];
+					if ( slot._isShowDisplay && ( slot.display is DisplayObject ) ) {
+						starlingContainer.mChildren.push( slot.display as DisplayObject );
+					}
+				}
+			}
+		}
+
 		/** @private */
 		override dragonBones_internal function removeDisplayFromContainer():void
 		{
 			if(_starlingDisplay && _starlingDisplay.parent)
 			{
-				_starlingDisplay.parent.removeChild(_starlingDisplay);
+				// SIG: performance
+				StarlingUtils.removeChildSilent( _starlingDisplay.parent, _starlingDisplay );
 			}
 		}
 		

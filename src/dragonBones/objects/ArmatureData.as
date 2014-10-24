@@ -1,5 +1,8 @@
 package dragonBones.objects
 {
+
+	import com.sig.utils.Sort;
+
 	/** @private */
 	final public class ArmatureData
 	{
@@ -167,33 +170,19 @@ package dragonBones.objects
 		
 		public function sortBoneDataList():void
 		{
-			var i:int = _boneDataList.length;
-			if(i == 0)
-			{
-				return;
-			}
-			
-			var helpArray:Array = [];
-			while(i --)
-			{
-				var boneData:BoneData = _boneDataList[i];
-				var level:int = 0;
-				var parentData:BoneData = boneData;
-				while(parentData)
-				{
-					level ++;
-					parentData = getBoneData(parentData.parent);
+			// SIG: performance update for bone sort
+			// store level inside BoneData
+			// use mergeSort to sort them without additional mem allocs
+			for each ( var bd : BoneData in _boneDataList ) {
+				var lvl : int = 0;
+				var par : BoneData = bd;
+				while ( par && par.parent ) {
+					lvl++;
+					par = getBoneData( par.parent );
 				}
-				helpArray[i] = [level, boneData];
+				bd.level = lvl;
 			}
-			
-			helpArray.sortOn("0", Array.NUMERIC);
-			
-			i = helpArray.length;
-			while(i --)
-			{
-				_boneDataList[i] = helpArray[i][1];
-			}
+			Sort.mergeSort( _boneDataList as Vector.<*>, _boneDataSort_closure );
 		}
 		
 		public function getAreaData(areaName:String):IAreaData
@@ -227,5 +216,11 @@ package dragonBones.objects
 				_areaDataList.fixed = true;
 			}
 		}
+
+		static private const _boneDataSort_closure : Function = boneDataSort;
+		static private function boneDataSort( a : BoneData, b : BoneData ) : int {
+			return a.level - b.level;
+		}
+
 	}
 }

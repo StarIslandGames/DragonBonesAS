@@ -2,6 +2,9 @@ package dragonBones.objects
 {
 	final public class BoneData
 	{
+
+		public var level : int;
+
 		public var name:String;
 		public var parent:String;
 		public var length:Number;

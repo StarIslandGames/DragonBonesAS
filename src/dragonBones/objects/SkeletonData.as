@@ -138,5 +138,9 @@ package dragonBones.objects
 				}
 			}
 		}
+
+		public function get subTexturePivots() : Object {
+			return _subTexturePivots;
+		}
 	}
 }

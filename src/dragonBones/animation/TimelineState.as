@@ -372,10 +372,10 @@ package dragonBones.animation
 			else if(_animationState.autoTween)
 			{
 				_tweenEasing = _animationState.clip.tweenEasing;
-				if(isNaN(_tweenEasing))
+				if(_tweenEasing != _tweenEasing) //isNaN
 				{
 					_tweenEasing = currentFrame.tweenEasing;
-					if(isNaN(_tweenEasing))    //frame no tween
+					if( _tweenEasing != _tweenEasing ) //isNaN    //frame no tween
 					{
 						tweenEnabled = false;
 					}
@@ -398,7 +398,7 @@ package dragonBones.animation
 			else
 			{
 				_tweenEasing = currentFrame.tweenEasing;
-				if(isNaN(_tweenEasing) || _tweenEasing == 10)    //frame no tween
+				if((_tweenEasing != _tweenEasing) || _tweenEasing == 10) //isNaN    //frame no tween
 				{
 					_tweenEasing = NaN;
 					tweenEnabled = false;

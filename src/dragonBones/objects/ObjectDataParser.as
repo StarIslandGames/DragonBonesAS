@@ -147,7 +147,7 @@
 			var boneData : BoneData = new BoneData();
 			boneData.name = boneObject[ConstValues.A_NAME];
 			boneData.parent = boneObject[ConstValues.A_PARENT];
-			boneData.length = Number( boneObject[ConstValues.A_LENGTH] );
+			boneData.length = getNumber( boneObject, ConstValues.A_LENGTH, 0 );
 			boneData.inheritRotation = getBoolean( boneObject, ConstValues.A_INHERIT_ROTATION, true );
 			boneData.inheritScale = getBoolean( boneObject, ConstValues.A_INHERIT_SCALE, false );
 

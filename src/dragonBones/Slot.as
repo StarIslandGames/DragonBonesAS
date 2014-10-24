@@ -445,6 +445,15 @@
 		{
 			throw new IllegalOperationError("Abstract method needs to be implemented in subclass!");
 		}
+
+		// SIG: performance update
+		dragonBones_internal function setDisplayToConatiner( slotList : Vector.<Slot>, container : Object ) : void {
+			for each ( var slot : Slot in slotList ) {
+				if ( slot._isShowDisplay ) {
+					slot.addDisplayToContainer( container );
+				}
+			}
+		}
 		
 		/**
 		 * @private
